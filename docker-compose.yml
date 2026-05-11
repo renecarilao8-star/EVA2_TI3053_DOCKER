@@ -1,0 +1,15 @@
+services:
+  frontend:
+    build: ./frontend
+    container_name: simi-frontend
+    ports:
+      - "80:3000"
+    environment:
+      DB_HOST: 172.31.37.68
+    networks:
+      - simi-net
+    restart: always
+
+networks:
+  simi-net:
+    driver: bridge

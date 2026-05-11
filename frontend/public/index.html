@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ERP Farmacias SIMI</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: Arial, sans-serif; background: #f0f2f5; }
+        header {
+            background: #410c96;
+            color: white;
+            padding: 20px;
+            text-align: center;
+        }
+        header h1 { font-size: 24px; }
+        .container { max-width: 900px; margin: 30px auto; padding: 0 20px; }
+        .card {
+            background: white;
+            border-radius: 8px;
+            padding: 25px;
+            margin-bottom: 25px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        h2 { color: #410c96; margin-bottom: 15px; }
+        .form-group { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 5px; font-weight: bold; color: #333; }
+        input, textarea {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+        button {
+            background: #410c96;
+            color: white;
+            padding: 10px 25px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 15px;
+        }
+        button:hover { background: #410c96; }
+        table { width: 100%; border-collapse: collapse; }
+        th { background: #410c96; color: white; padding: 10px; text-align: left; }
+        td { padding: 10px; border-bottom: 1px solid #eee; }
+        tr:hover { background: #f9f9f9; }
+        .mensaje { padding: 10px; border-radius: 5px; margin-bottom: 15px; display: none; }
+        .exito { background: #d4edda; color: #155724; }
+        .error { background: #f8d7da; color: #721c24; }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>🏥 ERP Farmacias SIMI</h1>
+        <p>Sistema de Gestión de Productos</p>
+    </header>
+
+    <div class="container">
+        <!-- Formulario -->
+        <div class="card">
+            <h2>Agregar Producto</h2>
+            <div id="mensaje" class="mensaje"></div>
+            <div class="form-group">
+                <label>Nombre del Producto</label>
+                <input type="text" id="nombre" placeholder="Ej: Paracetamol 500mg">
+            </div>
+            <div class="form-group">
+                <label>Descripción</label>
+                <textarea id="descripcion" rows="3" placeholder="Descripción del producto"></textarea>
+            </div>
+            <div class="form-group">
+                <label>Precio ($)</label>
+                <input type="number" id="precio" placeholder="Ej: 1990" min="0">
+            </div>
+            <div class="form-group">
+                <label>Stock</label>
+                <input type="number" id="stock" placeholder="Ej: 100" min="0">
+            </div>
+            <button onclick="agregarProducto()">Agregar Producto</button>
+        </div>
+
+        <!-- Tabla -->
+        <div class="card">
+            <h2>Listado de Productos</h2>
+            <table>
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Nombre</th>
+                        <th>Descripción</th>
+                        <th>Precio</th>
+                        <th>Stock</th>
+                    </tr>
+                </thead>
+                <tbody id="tablaProductos">
+                    <tr><td colspan="5" style="text-align:center">Cargando...</td></tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        async function cargarProductos() {
+            try {
+                const res = await fetch('/api/productos');
+                const productos = await res.json();
+                const tbody = document.getElementById('tablaProductos');
+                if (productos.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center">No hay productos registrados</td></tr>';
+                    return;
+                }
+                tbody.innerHTML = productos.map(p => `
+                    <tr>
+                        <td>${p.id}</td>
+                        <td>${p.nombre}</td>
+                        <td>${p.descripcion || '-'}</td>
+                        <td>$${parseFloat(p.precio).toLocaleString('es-CL')}</td>
+                        <td>${p.stock}</td>
+                    </tr>
+                `).join('');
+            } catch (err) {
+                console.error('Error cargando productos:', err);
+            }
+        }
+
+        async function agregarProducto() {
+            const nombre = document.getElementById('nombre').value.trim();
+            const descripcion = document.getElementById('descripcion').value.trim();
+            const precio = document.getElementById('precio').value;
+            const stock = document.getElementById('stock').value;
+            const mensaje = document.getElementById('mensaje');
+
+            if (!nombre || !precio || !stock) {
+                mensaje.className = 'mensaje error';
+                mensaje.style.display = 'block';
+                mensaje.textContent = 'Por favor completa todos los campos obligatorios.';
+                return;
+            }
+
+            try {
+                const res = await fetch('/api/productos', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ nombre, descripcion, precio, stock })
+                });
+                if (res.ok) {
+                    mensaje.className = 'mensaje exito';
+                    mensaje.style.display = 'block';
+                    mensaje.textContent = 'Producto agregado correctamente!';
+                    document.getElementById('nombre').value = '';
+                    document.getElementById('descripcion').value = '';
+                    document.getElementById('precio').value = '';
+                    document.getElementById('stock').value = '';
+                    cargarProductos();
+                }
+            } catch (err) {
+                mensaje.className = 'mensaje error';
+                mensaje.style.display = 'block';
+                mensaje.textContent = 'Error al agregar producto.';
+            }
+        }
+
+        cargarProductos();
+        setInterval(cargarProductos, 10000);
+    </script>
+</body>
+</html>
