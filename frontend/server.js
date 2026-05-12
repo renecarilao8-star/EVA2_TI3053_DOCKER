@@ -38,4 +38,15 @@ app.post('/api/productos', async (req, res) => {
   }
 });
 
+// DELETE producto
+app.delete('/api/productos/:id', async (req, res) => {
+  const { id } = req.params;
+  try {
+    await pool.query('DELETE FROM productos WHERE id = $1', [id]);
+    res.json({ mensaje: 'Producto eliminado correctamente' });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 app.listen(3000, () => console.log('Servidor ERP SIMI corriendo en puerto 3000'));
