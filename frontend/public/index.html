@@ -83,14 +83,18 @@
                     return;
                 }
                 tbody.innerHTML = productos.map(p => `
-                    <tr>
+                    <tr style="${p.stock == 0 ? 'background:#fff3cd;' : ''}">
                         <td>${p.id}</td>
                         <td>${p.nombre}</td>
                         <td>${p.descripcion || '-'}</td>
                         <td>$${parseFloat(p.precio).toLocaleString('es-CL')}</td>
-                        <td>${p.stock}</td>
+                        <td>${p.stock == 0 ? '<span style="color:#856404;font-weight:bold;">Sin stock</span>' : p.stock}</td>
                         <td>
-                            <button onclick="eliminarProducto(${p.id})" style="background:#dc3545;padding:5px 12px;font-size:13px;border-radius:5px;color:white;border:none;cursor:pointer;">🗑️ Eliminar</button>
+                            ${p.stock == 0
+                                ? `<button onclick="reponerStock(${p.id})" style="background:#28a745;padding:5px 10px;font-size:12px;border-radius:5px;color:white;border:none;cursor:pointer;margin-right:4px;">✅ Reponer stock</button>`
+                                : `<button onclick="darDeBaja(${p.id})" style="background:#fd7e14;padding:5px 10px;font-size:12px;border-radius:5px;color:white;border:none;cursor:pointer;margin-right:4px;">⚠️ Dar de baja</button>`
+                            }
+                            <button onclick="eliminarProducto(${p.id})" style="background:#dc3545;padding:5px 10px;font-size:12px;border-radius:5px;color:white;border:none;cursor:pointer;">🗑️ Eliminar</button>
                         </td>
                     </tr>
                 `).join('');
@@ -131,6 +135,31 @@
                 mensaje.className = 'mensaje error';
                 mensaje.style.display = 'block';
                 mensaje.textContent = 'Error al agregar producto.';
+            }
+        }
+
+        async function darDeBaja(id) {
+            if (!confirm('¿Dar de baja este producto? Su stock quedará en 0.')) return;
+            try {
+                const res = await fetch(`/api/productos/${id}/baja`, { method: 'PUT' });
+                if (res.ok) cargarProductos();
+            } catch (err) {
+                console.error('Error al dar de baja:', err);
+            }
+        }
+
+        async function reponerStock(id) {
+            const nuevoStock = prompt('Ingresa el nuevo stock:');
+            if (!nuevoStock || isNaN(nuevoStock) || nuevoStock <= 0) return;
+            try {
+                const res = await fetch(`/api/productos/${id}/reponer`, {
+                    method: 'PUT',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ stock: parseInt(nuevoStock) })
+                });
+                if (res.ok) cargarProductos();
+            } catch (err) {
+                console.error('Error reponiendo stock:', err);
             }
         }
 
