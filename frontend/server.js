@@ -49,4 +49,33 @@ app.delete('/api/productos/:id', async (req, res) => {
   }
 });
 
+// PUT dar de baja producto (stock = 0)
+app.put('/api/productos/:id/baja', async (req, res) => {
+  const { id } = req.params;
+  try {
+    const result = await pool.query(
+      'UPDATE productos SET stock = 0 WHERE id = $1 RETURNING *',
+      [id]
+    );
+    res.json(result.rows[0]);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// PUT reponer stock
+app.put('/api/productos/:id/reponer', async (req, res) => {
+  const { id } = req.params;
+  const { stock } = req.body;
+  try {
+    const result = await pool.query(
+      'UPDATE productos SET stock = $1 WHERE id = $2 RETURNING *',
+      [stock, id]
+    );
+    res.json(result.rows[0]);
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
 app.listen(3000, () => console.log('Servidor ERP SIMI corriendo en puerto 3000'));
